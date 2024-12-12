@@ -26,7 +26,7 @@ class MediaService {
           id: DateTime.now().millisecondsSinceEpoch.toString(),
           title: file.path.split(Platform.pathSeparator).last,
           type: type,
-          path: file.path,
+          path: 'http://192.168.0.5:3000/uploads/' + file.path.split(Platform.pathSeparator).last,
           duration: 10,
         );
 

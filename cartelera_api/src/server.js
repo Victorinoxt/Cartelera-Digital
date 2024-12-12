@@ -34,13 +34,18 @@ const upload = multer({ storage: storage });
 // Servir archivos estáticos
 app.use('/uploads', express.static('uploads'));
 
+// Ruta para verificar el estado de la API
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'API funcionando correctamente' });
+});
+
 // Ruta para subir imágenes
 app.post('/api/upload', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No se subió ningún archivo' });
   }
   
-  const imageUrl = `http://localhost:3000/uploads/${req.file.filename}`;
+  const imageUrl = `http://192.168.0.5:3000/uploads/${req.file.filename}`;
   res.json({ imageUrl });
 });
 

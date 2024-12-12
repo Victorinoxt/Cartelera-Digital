@@ -5,6 +5,7 @@ import 'utils/theme.dart';
 import 'screens/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'services/media_api_service.dart'; // Importar el servicio de API
 
 void main() {
   initializeDateFormatting('es').then((_) {
@@ -13,7 +14,18 @@ void main() {
         child: MyApp(),
       ),
     );
+    checkApiConnection(); // Llamar al método de verificación de conexión
   });
+}
+
+void checkApiConnection() async {
+  final mediaApiService = MediaApiService();
+  bool isConnected = await mediaApiService.checkConnection();
+  if (isConnected) {
+    print('Conexión exitosa con la API de monitoreo.');
+  } else {
+    print('Error al conectar con la API de monitoreo.');
+  }
 }
 
 class MyApp extends StatelessWidget {

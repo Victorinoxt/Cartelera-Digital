@@ -6,6 +6,7 @@ import '../../controllers/monitoring_controller.dart';
 import '../../models/upload_status.dart';
 import '../../models/monitoring_state.dart';
 import '../../services/api_service.dart';
+import '../../widgets/image_upload_widget.dart';  // Agregamos el nuevo widget
 
 class MonitoringScreen extends ConsumerStatefulWidget {
   const MonitoringScreen({Key? key}) : super(key: key);
@@ -38,10 +39,7 @@ class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showUploadDialog(context),
-        child: const Icon(Icons.upload_file),
-      ),
+      // Eliminamos el FloatingActionButton ya que tenemos el ImageUploadWidget
     );
   }
 
@@ -50,13 +48,28 @@ class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
       margin: const EdgeInsets.all(16),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+        child: Column(
           children: [
-            _buildStatusCard('Pendientes', state.pendingUploads),
-            _buildStatusCard('En Proceso', state.inProgressUploads),
-            _buildStatusCard('Completados', state.completedUploads),
-            _buildStatusCard('Con Error', state.failedUploads),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Estado del Sistema',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                ImageUploadWidget(),  // Agregamos el widget de subida de imágenes
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatusCard('Pendientes', state.pendingUploads),
+                _buildStatusCard('En Proceso', state.inProgressUploads),
+                _buildStatusCard('Completados', state.completedUploads),
+                _buildStatusCard('Con Error', state.failedUploads),
+              ],
+            ),
           ],
         ),
       ),
