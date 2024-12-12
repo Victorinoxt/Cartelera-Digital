@@ -150,6 +150,7 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+<<<<<<< HEAD
   flutter_dotenv:
     dependency: "direct main"
     description:
@@ -158,6 +159,8 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.1"
+=======
+>>>>>>> origin/main
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -253,6 +256,7 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.7.0"
+<<<<<<< HEAD
   google_fonts:
     dependency: "direct main"
     description:
@@ -261,6 +265,8 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.2.1"
+=======
+>>>>>>> origin/main
   html:
     dependency: transitive
     description:

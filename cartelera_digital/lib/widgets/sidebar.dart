@@ -5,6 +5,7 @@ import '../providers/theme_provider.dart';
 final sidebarExpandedProvider = StateProvider<bool>((ref) => true);
 final selectedIndexProvider = StateProvider<int>((ref) => 0);
 
+<<<<<<< HEAD
 class Sidebar extends StatelessWidget {
   const Sidebar({super.key});
 
@@ -23,13 +24,51 @@ class Sidebar extends StatelessWidget {
             child: _buildNavItems(context),
           ),
           _buildThemeToggle(context),
+=======
+class Sidebar extends ConsumerWidget {
+  const Sidebar({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isExpanded = ref.watch(sidebarExpandedProvider);
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final selectedIndex = ref.watch(selectedIndexProvider);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+      width: isExpanded ? 280 : 70,
+      decoration: BoxDecoration(
+        color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildHeader(context, isExpanded, ref),
+          const SizedBox(height: 16),
+          Expanded(
+            child: _buildNavItems(context, isExpanded, selectedIndex, ref),
+          ),
+          _buildThemeToggle(context, isExpanded, ref),
+>>>>>>> origin/main
           const SizedBox(height: 16),
         ],
       ),
     );
   }
 
+<<<<<<< HEAD
   Widget _buildHeader(BuildContext context) {
+=======
+  Widget _buildHeader(BuildContext context, bool isExpanded, WidgetRef ref) {
+>>>>>>> origin/main
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
@@ -77,7 +116,11 @@ class Sidebar extends StatelessWidget {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildNavItems(BuildContext context) {
+=======
+  Widget _buildNavItems(BuildContext context, bool isExpanded, int selectedIndex, WidgetRef ref) {
+>>>>>>> origin/main
     final items = [
       _NavItem(
         icon: Icons.dashboard_outlined,
@@ -112,6 +155,10 @@ class Sidebar extends StatelessWidget {
         return _buildNavItem(
           context, 
           items[index], 
+<<<<<<< HEAD
+=======
+          isExpanded, 
+>>>>>>> origin/main
           index == selectedIndex,
           () => ref.read(selectedIndexProvider.notifier).state = index,
         );
@@ -122,6 +169,10 @@ class Sidebar extends StatelessWidget {
   Widget _buildNavItem(
     BuildContext context, 
     _NavItem item, 
+<<<<<<< HEAD
+=======
+    bool isExpanded, 
+>>>>>>> origin/main
     bool isSelected,
     VoidCallback onTap,
   ) {
@@ -154,7 +205,11 @@ class Sidebar extends StatelessWidget {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildThemeToggle(BuildContext context) {
+=======
+  Widget _buildThemeToggle(BuildContext context, bool isExpanded, WidgetRef ref) {
+>>>>>>> origin/main
     final isDarkMode = ref.watch(themeProvider);
     final theme = Theme.of(context);
 
