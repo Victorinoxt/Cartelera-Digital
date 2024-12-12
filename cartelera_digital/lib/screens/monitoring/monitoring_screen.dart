@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 import '../../controllers/monitoring_controller.dart';
 import '../../models/upload_status.dart';
 import '../../models/monitoring_state.dart';
+import '../../services/api_service.dart';
 
 class MonitoringScreen extends ConsumerStatefulWidget {
   const MonitoringScreen({Key? key}) : super(key: key);
@@ -22,12 +25,8 @@ class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-<<<<<<< HEAD
             onPressed: () =>
                 ref.read(monitoringControllerProvider.notifier).refreshStatus(),
-=======
-            onPressed: () => ref.read(monitoringControllerProvider.notifier).refreshStatus(),
->>>>>>> origin/main
           ),
         ],
       ),
@@ -80,11 +79,7 @@ class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     if (state.hasError) {
       return Center(child: Text(state.errorMessage ?? 'Error desconocido'));
     }
@@ -118,7 +113,6 @@ class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
 
   IconData _getIconForFileType(String fileType) {
     switch (fileType.toLowerCase()) {
-<<<<<<< HEAD
       case 'image':
         return Icons.image;
       case 'video':
@@ -127,18 +121,11 @@ class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
         return Icons.description;
       default:
         return Icons.file_present;
-=======
-      case 'image': return Icons.image;
-      case 'video': return Icons.video_file;
-      case 'document': return Icons.description;
-      default: return Icons.file_present;
->>>>>>> origin/main
     }
   }
 
   String _getStatusText(UploadState state) {
     switch (state) {
-<<<<<<< HEAD
       case UploadState.pending:
         return 'Pendiente';
       case UploadState.inProgress:
@@ -149,13 +136,6 @@ class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
         return 'Error';
       default:
         return 'Desconocido';
-=======
-      case UploadState.pending: return 'Pendiente';
-      case UploadState.inProgress: return 'En Proceso';
-      case UploadState.completed: return 'Completado';
-      case UploadState.failed: return 'Error';
-      default: return 'Desconocido';
->>>>>>> origin/main
     }
   }
 
@@ -183,10 +163,24 @@ class _MonitoringScreenState extends ConsumerState<MonitoringScreen> {
   }
 
   Future<void> _handleUpload() async {
-    // Implementar la lógica de subida
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+      );
+
+      if (result != null) {
+        String filePath = result.files.single.path!;
+        await ref.read(monitoringControllerProvider.notifier).uploadImage(filePath);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al subir la imagen: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> origin/main

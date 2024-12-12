@@ -5,6 +5,7 @@ import 'logging_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 
 final apiServiceProvider = Provider((ref) => ApiService());
 
@@ -22,71 +23,74 @@ class ApiService {
           if (fecha != null) {
             queryParams['fecha_aviso'] = _formatDate(fecha);
           }
-          
+
           // Hacer tres llamadas para obtener los diferentes estados
           final completadasUri = Uri.parse('$_baseUrl/planificador/solicitudes')
-              .replace(queryParameters: {...queryParams, 'status': 'Completado'});
+              .replace(
+                  queryParameters: {...queryParams, 'status': 'Completado'});
           final pendientesUri = Uri.parse('$_baseUrl/planificador/solicitudes')
-              .replace(queryParameters: {...queryParams, 'status': 'Pendiente'});
+              .replace(
+                  queryParameters: {...queryParams, 'status': 'Pendiente'});
           final enProcesoUri = Uri.parse('$_baseUrl/planificador/solicitudes')
-              .replace(queryParameters: {...queryParams, 'status': 'En Proceso'});
-          
+              .replace(
+                  queryParameters: {...queryParams, 'status': 'En Proceso'});
+
           final responses = await Future.wait([
             _client.get(completadasUri),
             _client.get(pendientesUri),
             _client.get(enProcesoUri),
           ]);
-          
+
           if (responses.every((response) => response.statusCode == 200)) {
             final completadas = jsonDecode(responses[0].body) as List<dynamic>;
             final pendientes = jsonDecode(responses[1].body) as List<dynamic>;
             final enProceso = jsonDecode(responses[2].body) as List<dynamic>;
-            
-            final total = completadas.length + pendientes.length + enProceso.length;
-            
+
+            final total =
+                completadas.length + pendientes.length + enProceso.length;
+
             return [
               ChartData(
-                category: 'Completado\n(${(completadas.length / total * 100).toStringAsFixed(1)}%)',
-                value: completadas.length.toDouble(),
-                date: fecha ?? DateTime.now(),
-                color: Colors.green.shade500
-              ),
+                  category:
+                      'Completado\n(${(completadas.length / total * 100).toStringAsFixed(1)}%)',
+                  value: completadas.length.toDouble(),
+                  date: fecha ?? DateTime.now(),
+                  color: Colors.green.shade500),
               ChartData(
-                category: 'Pendiente\n(${(pendientes.length / total * 100).toStringAsFixed(1)}%)',
-                value: pendientes.length.toDouble(),
-                date: fecha ?? DateTime.now(),
-                color: Colors.orange.shade500
-              ),
+                  category:
+                      'Pendiente\n(${(pendientes.length / total * 100).toStringAsFixed(1)}%)',
+                  value: pendientes.length.toDouble(),
+                  date: fecha ?? DateTime.now(),
+                  color: Colors.orange.shade500),
               ChartData(
-                category: 'En Proceso\n(${(enProceso.length / total * 100).toStringAsFixed(1)}%)',
-                value: enProceso.length.toDouble(),
-                date: fecha ?? DateTime.now(),
-                color: Colors.blue.shade500
-              ),
+                  category:
+                      'En Proceso\n(${(enProceso.length / total * 100).toStringAsFixed(1)}%)',
+                  value: enProceso.length.toDouble(),
+                  date: fecha ?? DateTime.now(),
+                  color: Colors.blue.shade500),
             ];
           }
           throw Exception('Error al obtener datos de estado');
-          
+
         case 'ot_rendimiento':
-          final queryParams = <String, String>{
-            'status': 'Completado'
-          };
-          
+          final queryParams = <String, String>{'status': 'Completado'};
+
           if (fecha != null) {
             queryParams['fecha_aviso'] = _formatDate(fecha);
           }
-          
+
           final uri = Uri.parse('$_baseUrl/planificador/solicitudes')
               .replace(queryParameters: queryParams);
-              
+
           final response = await _client.get(uri);
-          
+
           if (response.statusCode == 200) {
             final List<dynamic> data = jsonDecode(response.body);
             return _mapOTRendimientoData(data, fecha);
           }
-          throw Exception('Error al obtener datos de rendimiento: ${response.statusCode}');
-          
+          throw Exception(
+              'Error al obtener datos de rendimiento: ${response.statusCode}');
+
         default:
           throw Exception('Tipo de gráfico no soportado: $tipo');
       }
@@ -103,7 +107,7 @@ class ApiService {
   List<ChartData> _mapOTRendimientoData(List<dynamic> data, DateTime? fecha) {
     final Map<String, int> rendimientoMap = {};
     int totalOTs = 0;
-    
+
     // Lista de colores para las barras
     final List<Color> colors = [
       Colors.blue.shade500,
@@ -112,7 +116,7 @@ class ApiService {
       Colors.orange.shade500,
       Colors.red.shade500,
     ];
-    
+
     // Contamos las OTs completadas por cada técnico
     for (var item in data) {
       if (item['status'] == 'Completado') {
@@ -132,7 +136,7 @@ class ApiService {
     return sortedEntries.take(5).map((entry) {
       final index = sortedEntries.indexOf(entry);
       final porcentaje = (entry.value / totalOTs * 100).toStringAsFixed(1);
-      
+
       return ChartData(
         category: '${entry.key}\n(${porcentaje}%)',
         value: entry.value.toDouble(),
@@ -189,7 +193,43 @@ class ApiService {
     // Implementar lógica de GET
   }
 
-  Future<dynamic> patch(String endpoint, {required Map<String, dynamic> data}) async {
+  Future<dynamic> patch(String endpoint,
+      {required Map<String, dynamic> data}) async {
     // Implementar lógica de PATCH
+  }
+
+  Future<String> uploadImage(File imageFile) async {
+    try {
+      LoggingService.info('Iniciando subida de imagen: ${imageFile.path}');
+
+      var request =
+          http.MultipartRequest('POST', Uri.parse('$_baseUrl/upload'));
+
+      // Agregar el archivo a la solicitud
+      var stream = http.ByteStream(imageFile.openRead());
+      var length = await imageFile.length();
+
+      var multipartFile = http.MultipartFile('image', stream, length,
+          filename: imageFile.path.split('/').last);
+
+      request.files.add(multipartFile);
+
+      LoggingService.info('Enviando solicitud de subida...');
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        LoggingService.info('Imagen subida exitosamente: ${data['imageUrl']}');
+        return data['imageUrl'];
+      } else {
+        LoggingService.error('Error al subir imagen',
+            'Código de estado: ${response.statusCode}');
+        throw Exception('Error al subir la imagen: ${response.statusCode}');
+      }
+    } catch (e) {
+      LoggingService.error('Error en uploadImage', e);
+      throw Exception('Error en la subida: $e');
+    }
   }
 }

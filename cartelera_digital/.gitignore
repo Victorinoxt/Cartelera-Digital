@@ -41,9 +41,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-<<<<<<< HEAD
 
 # Variables de entorno
 .env
-=======
->>>>>>> origin/main

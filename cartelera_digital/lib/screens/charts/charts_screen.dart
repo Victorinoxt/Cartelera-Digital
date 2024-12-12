@@ -53,11 +53,7 @@ class ChartsScreen extends ConsumerStatefulWidget {
 class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   ChartSeriesController? _chartController;
   bool _isExporting = false;
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> origin/main
   @override
   void initState() {
     super.initState();
@@ -146,7 +142,6 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       crossAxisCount: 2,
       children: [
         _buildChartWithFilter(
-<<<<<<< HEAD
             type: 'bar',
             data: state.salesData,
             title: 'OT Completadas por Técnico',
@@ -156,19 +151,6 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             data: state.productionData,
             title: 'Rendimiento del mes OT Completadas',
             tipo: 'ot_rendimiento'),
-=======
-          type: 'bar',
-          data: state.salesData,
-          title: 'OT Completadas por Técnico',
-          tipo: 'ot_status'
-        ),
-        _buildChartWithFilter(
-          type: 'bar',
-          data: state.productionData,
-          title: 'Rendimiento del mes OT Completadas',
-          tipo: 'ot_rendimiento'
-        ),
->>>>>>> origin/main
       ],
     );
   }
@@ -180,13 +162,8 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     required String tipo,
   }) {
     final chartState = ref.watch(chartControllerProvider);
-<<<<<<< HEAD
     final selectedDate = tipo == 'ot_status'
         ? chartState.otStatusDate
-=======
-    final selectedDate = tipo == 'ot_status' 
-        ? chartState.otStatusDate 
->>>>>>> origin/main
         : chartState.otRendimientoDate;
 
     return Card(
@@ -204,24 +181,16 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                       icon: const Icon(Icons.file_download),
                       onPressed: () => _exportChart(
                         title,
-<<<<<<< HEAD
                         type == 'pie'
                             ? _buildPieChart(data)
                             : _buildBarChart(data),
-=======
-                        type == 'pie' ? _buildPieChart(data) : _buildBarChart(data),
->>>>>>> origin/main
                       ),
                       tooltip: 'Exportar gráfico',
                     ),
                     IconButton(
                       icon: const Icon(Icons.calendar_today),
                       onPressed: () => _showDatePicker(context, ref, tipo),
-<<<<<<< HEAD
                       tooltip: selectedDate != null
-=======
-                      tooltip: selectedDate != null 
->>>>>>> origin/main
                           ? DateFormat('dd/MM/yyyy', 'es').format(selectedDate)
                           : 'Seleccionar fecha',
                     ),
@@ -231,13 +200,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
             ),
           ),
           Expanded(
-<<<<<<< HEAD
             child: type == 'pie' ? _buildPieChart(data) : _buildBarChart(data),
-=======
-            child: type == 'pie' 
-                ? _buildPieChart(data)
-                : _buildBarChart(data),
->>>>>>> origin/main
           ),
         ],
       ),
@@ -248,13 +211,9 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     return ChartBuilder(
       data: data,
       type: type,
-<<<<<<< HEAD
       title: type == 'pie'
           ? 'OT Abiertas/Completadas'
           : 'Rendimiento del mes OT Completadas',
-=======
-      title: type == 'pie' ? 'OT Abiertas/Completadas' : 'Rendimiento del mes OT Completadas',
->>>>>>> origin/main
     );
   }
 
@@ -378,17 +337,10 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
 
   Widget _buildBarChart(List<ChartData> data) {
     if (data.isEmpty) return const SizedBox();
-<<<<<<< HEAD
 
     // Calculamos el total para los porcentajes
     final total = data.fold(0.0, (sum, item) => sum + item.value);
 
-=======
-    
-    // Calculamos el total para los porcentajes
-    final total = data.fold(0.0, (sum, item) => sum + item.value);
-    
->>>>>>> origin/main
     return SfCartesianChart(
       primaryXAxis: CategoryAxis(
         labelStyle: const TextStyle(fontSize: 12),
@@ -428,11 +380,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   Future<void> _exportarTodosLosGraficos() async {
     try {
       final chartState = ref.read(chartControllerProvider);
-<<<<<<< HEAD
 
-=======
-      
->>>>>>> origin/main
       final settings = await showDialog<ExportSettings>(
         context: context,
         builder: (context) => ExportSettingsDialog(
@@ -451,11 +399,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
 
       if (settings != null) {
         final exportService = ref.read(chartExportServiceProvider);
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         // Lista de gráficos a exportar
         final graficos = [
           {
@@ -478,23 +422,15 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           );
 
           if (result == null) {
-<<<<<<< HEAD
             throw Exception(
                 'Error al exportar el gráfico: ${grafico['title']}');
-=======
-            throw Exception('Error al exportar el gráfico: ${grafico['title']}');
->>>>>>> origin/main
           }
         }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-<<<<<<< HEAD
             const SnackBar(
                 content: Text('Todos los gráficos exportados exitosamente')),
-=======
-            const SnackBar(content: Text('Todos los gráficos exportados exitosamente')),
->>>>>>> origin/main
           );
         }
       }
@@ -509,11 +445,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
 
   void _mostrarFiltros() {
     final chartState = ref.read(chartControllerProvider);
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> origin/main
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -530,12 +462,8 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                 icon: Icons.pie_chart,
                 date: chartState.otStatusDate,
                 onTap: () => _showDatePicker(context, ref, 'ot_status'),
-<<<<<<< HEAD
                 onClear: () => ref
                     .read(chartControllerProvider.notifier)
-=======
-                onClear: () => ref.read(chartControllerProvider.notifier)
->>>>>>> origin/main
                     .actualizarGraficoConFecha('ot_status', null),
               ),
               const SizedBox(height: 8),
@@ -546,12 +474,8 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                 icon: Icons.bar_chart,
                 date: chartState.otRendimientoDate,
                 onTap: () => _showDatePicker(context, ref, 'ot_rendimiento'),
-<<<<<<< HEAD
                 onClear: () => ref
                     .read(chartControllerProvider.notifier)
-=======
-                onClear: () => ref.read(chartControllerProvider.notifier)
->>>>>>> origin/main
                     .actualizarGraficoConFecha('ot_rendimiento', null),
               ),
             ],
@@ -560,13 +484,9 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
         actions: [
           TextButton(
             onPressed: () {
-<<<<<<< HEAD
               ref
                   .read(chartControllerProvider.notifier)
                   .actualizarTodosLosGraficos();
-=======
-              ref.read(chartControllerProvider.notifier).actualizarTodosLosGraficos();
->>>>>>> origin/main
               Navigator.of(context).pop();
             },
             child: const Text('Actualizar Todo'),
@@ -593,11 +513,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
         leading: Icon(icon),
         title: Text(title),
         subtitle: Text(
-<<<<<<< HEAD
           date != null 
-=======
-          date != null
->>>>>>> origin/main
               ? DateFormat('dd/MM/yyyy', 'es').format(date)
               : subtitle
         ),
@@ -621,7 +537,6 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     );
   }
 
-<<<<<<< HEAD
   Future<void> _showDatePicker(
       BuildContext context, WidgetRef ref, String tipo) async {
     final chartState = ref.read(chartControllerProvider);
@@ -629,21 +544,12 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
         ? chartState.otStatusDate
         : chartState.otRendimientoDate;
 
-=======
-  Future<void> _showDatePicker(BuildContext context, WidgetRef ref, String tipo) async {
-    final chartState = ref.read(chartControllerProvider);
-    final currentDate = tipo == 'ot_status' 
-        ? chartState.otStatusDate 
-        : chartState.otRendimientoDate;
-        
->>>>>>> origin/main
     final fecha = await showDatePicker(
       context: context,
       initialDate: currentDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       locale: const Locale('es', 'ES'),
-<<<<<<< HEAD
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -657,12 +563,6 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     if (fecha != null && mounted) {
       await ref
           .read(chartControllerProvider.notifier)
-=======
-    );
-    
-    if (fecha != null) {
-      await ref.read(chartControllerProvider.notifier)
->>>>>>> origin/main
           .actualizarGraficoConFecha(tipo, fecha);
     }
   }
@@ -689,11 +589,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       if (settings != null) {
         setState(() => _isExporting = true);
         _showProgressDialog();
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/main
         final exportService = ref.read(chartExportServiceProvider);
         final result = await exportService.exportChartAsImage(
           context,
@@ -731,12 +627,8 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
         context: context,
         builder: (context) => ExportSettingsDialog(
           title: 'Exportar Todos los Gráficos',
-<<<<<<< HEAD
           chart: _buildChart(
               'pie', ref.read(chartControllerProvider).otStatusData),
-=======
-          chart: _buildChart('pie', ref.read(chartControllerProvider).otStatusData),
->>>>>>> origin/main
           initialSettings: const ExportSettings(
             width: 1920,
             height: 1080,
@@ -754,7 +646,6 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
 
         final charts = [
           _buildChart('pie', ref.read(chartControllerProvider).otStatusData),
-<<<<<<< HEAD
           _buildChart(
               'bar', ref.read(chartControllerProvider).otRendimientoData),
         ];
@@ -765,17 +656,6 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           final progress = (i + 1) / charts.length;
           ref.read(exportProgressProvider.notifier).state = progress;
 
-=======
-          _buildChart('bar', ref.read(chartControllerProvider).otRendimientoData),
-        ];
-
-        final exportService = ref.read(chartExportServiceProvider);
-        
-        for (var i = 0; i < charts.length; i++) {
-          final progress = (i + 1) / charts.length;
-          ref.read(exportProgressProvider.notifier).state = progress;
-          
->>>>>>> origin/main
           final result = await exportService.exportChartAsImage(
             context,
             charts[i],
@@ -792,12 +672,8 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
         if (mounted) {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
-<<<<<<< HEAD
             const SnackBar(
                 content: Text('Todos los gráficos exportados exitosamente')),
-=======
-            const SnackBar(content: Text('Todos los gráficos exportados exitosamente')),
->>>>>>> origin/main
           );
         }
       }

@@ -7,7 +7,6 @@ class MainScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-<<<<<<< HEAD
     final theme = Theme.of(context);
     
     return Scaffold(
@@ -42,18 +41,6 @@ class MainScreen extends ConsumerWidget {
                       ),
                     ],
                   ),
-=======
-    return Scaffold(
-      body: SafeArea(
-        child: Row(
-          children: [
-            const Sidebar(), // Sidebar retráctil
-            Expanded(
-              child: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                child: const Center(
-                  child: Text('Contenido Principal'),
->>>>>>> origin/main
                 ),
               ),
             ),

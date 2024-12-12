@@ -16,7 +16,7 @@ class MonitoringService {
       return _parseUploadStatus(response);
     } catch (e) {
       LoggingService.error('Error al obtener estado de subidas', e);
-      throw Exception('Error al obtener estado de subidas: $e');
+      return [];
     }
   }
 
@@ -28,36 +28,48 @@ class MonitoringService {
       );
     } catch (e) {
       LoggingService.error('Error al actualizar progreso', e);
-      throw Exception('Error al actualizar progreso: $e');
     }
   }
 
   List<UploadStatus> _parseUploadStatus(dynamic response) {
-    if (response is! List) throw Exception('Formato de respuesta inválido');
+    if (response == null) return [];
+    if (response is! List) return [];
     
-    return response.map((item) => UploadStatus(
-      id: item['id'],
-      fileName: item['fileName'],
-      fileType: item['fileType'],
-      progress: item['progress']?.toDouble() ?? 0.0,
-      state: _parseUploadState(item['state']),
-      error: item['error'],
-      createdAt: DateTime.parse(item['createdAt']),
-      updatedAt: item['updatedAt'] != null 
-          ? DateTime.parse(item['updatedAt'])
-          : null,
-      uploadedBy: item['uploadedBy'],
-      fileSize: item['fileSize'],
-    )).toList();
+    return response.map((item) {
+      try {
+        return UploadStatus(
+          id: item['id'] ?? '',
+          fileName: item['fileName'] ?? '',
+          fileType: item['fileType'] ?? '',
+          progress: (item['progress'] ?? 0.0).toDouble(),
+          state: _parseUploadState(item['state']),
+          url: item['url'],
+        );
+      } catch (e) {
+        LoggingService.error('Error al parsear upload status', e);
+        return UploadStatus(
+          id: '',
+          fileName: '',
+          fileType: '',
+          progress: 0.0,
+          state: UploadState.failed,
+        );
+      }
+    }).toList();
   }
 
   UploadState _parseUploadState(String? state) {
-    switch (state) {
-      case 'pending': return UploadState.pending;
-      case 'inProgress': return UploadState.inProgress;
-      case 'completed': return UploadState.completed;
-      case 'failed': return UploadState.failed;
-      default: return UploadState.pending;
+    switch (state?.toLowerCase()) {
+      case 'pending':
+        return UploadState.pending;
+      case 'inprogress':
+        return UploadState.inProgress;
+      case 'completed':
+        return UploadState.completed;
+      case 'failed':
+        return UploadState.failed;
+      default:
+        return UploadState.pending;
     }
   }
 }

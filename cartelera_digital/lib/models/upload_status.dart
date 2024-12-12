@@ -4,7 +4,7 @@ enum UploadState {
   pending,
   inProgress,
   completed,
-  failed
+  failed,
 }
 
 class UploadStatus {
@@ -13,43 +13,32 @@ class UploadStatus {
   final String fileType;
   final double progress;
   final UploadState state;
-  final String? error;
-  final DateTime createdAt;
-  final DateTime? updatedAt;
-  final String? uploadedBy;
-  final int fileSize;
+  final String? url;
 
-  const UploadStatus({
+  UploadStatus({
     required this.id,
     required this.fileName,
     required this.fileType,
     required this.progress,
     required this.state,
-    this.error,
-    required this.createdAt,
-    this.updatedAt,
-    this.uploadedBy,
-    required this.fileSize,
+    this.url,
   });
 
   UploadStatus copyWith({
+    String? id,
     String? fileName,
+    String? fileType,
     double? progress,
     UploadState? state,
-    String? error,
-    DateTime? updatedAt,
+    String? url,
   }) {
     return UploadStatus(
-      id: id,
+      id: id ?? this.id,
       fileName: fileName ?? this.fileName,
-      fileType: fileType,
+      fileType: fileType ?? this.fileType,
       progress: progress ?? this.progress,
       state: state ?? this.state,
-      error: error ?? this.error,
-      createdAt: createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      uploadedBy: uploadedBy,
-      fileSize: fileSize,
+      url: url ?? this.url,
     );
   }
 }
