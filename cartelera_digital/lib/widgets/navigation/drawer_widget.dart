@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/auth_provider.dart';
+import '../../widgets/theme_toggle_button.dart';
 
-class DrawerWidget extends StatelessWidget {
+class DrawerWidget extends ConsumerWidget {
   final int selectedIndex;
   final ValueChanged<int> onDestinationSelected;
 
@@ -11,9 +14,10 @@ class DrawerWidget extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final user = ref.watch(authProvider).user;
 
     return Drawer(
       backgroundColor: isDarkMode ? theme.colorScheme.surface : Colors.white,
@@ -28,42 +32,44 @@ class DrawerWidget extends StatelessWidget {
                 ],
               ),
             ),
-            child: Center(
-              child: Hero(
-                tag: 'logo-drawer',
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: isDarkMode ? theme.colorScheme.surface : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Image.asset(
-                    'assets/images/Logo_SIMCUV.png',
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.contain,
+            child: Column(
+              children: [
+                Center(
+                  child: Hero(
+                    tag: 'logo-drawer',
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDarkMode ? theme.colorScheme.surface : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Image.asset(
+                        'assets/images/Logo_SIMCUV.png',
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                if (user != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    user.username,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  Text(
+                    user.role,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ],
             ),
           ),
           ListTile(
             selected: selectedIndex == 0,
-            selectedColor: theme.colorScheme.primary,
-            leading: Icon(
-              selectedIndex == 0 ? Icons.dashboard : Icons.dashboard_outlined,
-              color: selectedIndex == 0 
-                  ? theme.colorScheme.primary 
-                  : isDarkMode ? Colors.white70 : Colors.black87,
-            ),
-            title: Text(
-              'Dashboard',
-              style: TextStyle(
-                color: selectedIndex == 0 
-                    ? theme.colorScheme.primary 
-                    : isDarkMode ? Colors.white70 : Colors.black87,
-              ),
-            ),
+            leading: const Icon(Icons.dashboard),
+            title: const Text('Dashboard'),
             onTap: () {
               onDestinationSelected(0);
               Navigator.pop(context);
@@ -71,21 +77,8 @@ class DrawerWidget extends StatelessWidget {
           ),
           ListTile(
             selected: selectedIndex == 1,
-            selectedColor: theme.colorScheme.primary,
-            leading: Icon(
-              selectedIndex == 1 ? Icons.bar_chart : Icons.bar_chart_outlined,
-              color: selectedIndex == 1 
-                  ? theme.colorScheme.primary 
-                  : isDarkMode ? Colors.white70 : Colors.black87,
-            ),
-            title: Text(
-              'Gráficos',
-              style: TextStyle(
-                color: selectedIndex == 1 
-                    ? theme.colorScheme.primary 
-                    : isDarkMode ? Colors.white70 : Colors.black87,
-              ),
-            ),
+            leading: const Icon(Icons.movie),
+            title: const Text('Medios'),
             onTap: () {
               onDestinationSelected(1);
               Navigator.pop(context);
@@ -93,26 +86,34 @@ class DrawerWidget extends StatelessWidget {
           ),
           ListTile(
             selected: selectedIndex == 2,
-            selectedColor: theme.colorScheme.primary,
-            leading: Icon(
-              selectedIndex == 2 ? Icons.perm_media : Icons.perm_media_outlined,
-              color: selectedIndex == 2 
-                  ? theme.colorScheme.primary 
-                  : isDarkMode ? Colors.white70 : Colors.black87,
-            ),
-            title: Text(
-              'Media',
-              style: TextStyle(
-                color: selectedIndex == 2 
-                    ? theme.colorScheme.primary 
-                    : isDarkMode ? Colors.white70 : Colors.black87,
-              ),
-            ),
+            leading: const Icon(Icons.bar_chart),
+            title: const Text('Gráficos'),
             onTap: () {
               onDestinationSelected(2);
               Navigator.pop(context);
             },
           ),
+          ListTile(
+            selected: selectedIndex == 3,
+            leading: const Icon(Icons.monitor),
+            title: const Text('Monitoreo'),
+            onTap: () {
+              onDestinationSelected(3);
+              Navigator.pop(context);
+            },
+          ),
+          const Spacer(),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('Cerrar Sesión'),
+            onTap: () {
+              ref.read(authProvider.notifier).logout();
+              Navigator.of(context).pushReplacementNamed('/');
+            },
+          ),
+          const ThemeToggleButton(),
+          const SizedBox(height: 8),
         ],
       ),
     );

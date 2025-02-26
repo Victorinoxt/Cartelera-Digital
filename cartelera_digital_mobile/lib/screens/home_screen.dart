@@ -1,49 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../widgets/image_grid_widget.dart';
-import '../controllers/image_controller.dart';
+import '../providers/content_provider.dart';
+import '../widgets/content_grid.dart';
+import '../services/logging_service.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final imagesState = ref.watch(imageControllerProvider);
+    final contentState = ref.watch(contentProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cartelera Digital'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(imageControllerProvider.notifier).refreshImages();
-            },
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(imageControllerProvider.notifier).refreshImages();
-        },
-        child: imagesState.when(
-          data: (_) => const ImageGridWidget(),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                const SizedBox(height: 16),
-                Text('Error: $error'),
-                TextButton(
-                  onPressed: () {
-                    ref.read(imageControllerProvider.notifier).loadImages();
-                  },
-                  child: const Text('Reintentar'),
+      backgroundColor: Colors.black,
+      body: contentState.when(
+        data: (contents) {
+          if (contents.isEmpty) {
+            return const Center(
+              child: Text(
+                'No hay contenido disponible',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
                 ),
-              ],
-            ),
+              ),
+            );
+          }
+          return ContentGrid(contents: contents);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Error al cargar el contenido',
+                style: const TextStyle(color: Colors.white),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  LoggingService.info('Reintentando cargar contenido...');
+                  ref.read(contentProvider.notifier).loadContents();
+                },
+                child: const Text('Reintentar'),
+              ),
+            ],
           ),
         ),
       ),

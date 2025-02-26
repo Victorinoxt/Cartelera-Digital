@@ -53,6 +53,10 @@ class MediaOrganizationService {
     }).toList();
   }
 
+  List<MediaItem> filterByType(List<MediaItem> items, MediaType type) {
+    return items.where((item) => item.type == type).toList();
+  }
+
   List<MediaItem> searchMedia(
     List<MediaItem> items,
     String query,

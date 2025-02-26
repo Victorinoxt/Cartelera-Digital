@@ -5,12 +5,72 @@ import 'package:flutter/rendering.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/chart_data.dart';
 import '../models/export_settings.dart';
+import '../models/export_type.dart';
 import '../utils/file_utils.dart';
 
 class ExportService {
   static final ExportService _instance = ExportService._internal();
   factory ExportService() => _instance;
   ExportService._internal();
+
+  Future<String> exportContent({
+    required String content,
+    required ExportSettings settings,
+    Function(double, String)? onProgress,
+  }) async {
+    switch (settings.type) {
+      case ExportType.pdf:
+        return await _exportToPdf(content, settings, onProgress);
+      case ExportType.image:
+        return await _exportToImage(content, settings, onProgress);
+      case ExportType.csv:
+        return await _exportToCsv(content, settings, onProgress);
+      case ExportType.excel:
+        return await _exportToExcel(content, settings, onProgress);
+      default:
+        throw UnimplementedError('Tipo de exportación no soportado: ${settings.type}');
+    }
+  }
+
+  Future<String> _exportToPdf(
+    String content,
+    ExportSettings settings,
+    Function(double, String)? onProgress,
+  ) async {
+    onProgress?.call(0.0, 'Iniciando exportación a PDF...');
+    // Implementar exportación a PDF
+    throw UnimplementedError('Exportación a PDF no implementada');
+  }
+
+  Future<String> _exportToImage(
+    String content,
+    ExportSettings settings,
+    Function(double, String)? onProgress,
+  ) async {
+    onProgress?.call(0.0, 'Iniciando exportación a imagen...');
+    // Implementar exportación a imagen
+    throw UnimplementedError('Exportación a imagen no implementada');
+  }
+
+  Future<String> _exportToCsv(
+    String content,
+    ExportSettings settings,
+    Function(double, String)? onProgress,
+  ) async {
+    onProgress?.call(0.0, 'Iniciando exportación a CSV...');
+    // Implementar exportación a CSV
+    throw UnimplementedError('Exportación a CSV no implementada');
+  }
+
+  Future<String> _exportToExcel(
+    String content,
+    ExportSettings settings,
+    Function(double, String)? onProgress,
+  ) async {
+    onProgress?.call(0.0, 'Iniciando exportación a Excel...');
+    // Implementar exportación a Excel
+    throw UnimplementedError('Exportación a Excel no implementada');
+  }
 
   Future<void> exportChart({
     required BuildContext context,
@@ -100,8 +160,7 @@ class ExportService {
 
       onProgress?.call(1.0, '¡Exportación completada!');
     } catch (e) {
-      debugPrint('Error en la exportación del gráfico: $e');
-      rethrow;
+      throw Exception('Error al exportar el gráfico: $e');
     }
   }
 }

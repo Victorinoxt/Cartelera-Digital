@@ -3,6 +3,7 @@ import '../../constants/app_colors.dart';
 import '../../screens/dashboard/widgets/logo_widget.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/navigation_provider.dart';
+import '../../providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NavigationRailWidget extends ConsumerWidget {
@@ -82,6 +83,46 @@ class NavigationRailWidget extends ConsumerWidget {
               indicatorColor: theme.colorScheme.primary.withOpacity(0.15),
               labelType: isExpanded ? NavigationRailLabelType.none : NavigationRailLabelType.selected,
               destinations: _buildDestinations(context, isExpanded),
+            ),
+          ),
+          // Botón de cerrar sesión
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: isExpanded ? 16 : 8,
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () {
+                  ref.read(authProvider.notifier).logout();
+                  Navigator.of(context).pushReplacementNamed('/');
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.logout,
+                        color: isDarkMode ? Colors.white70 : Colors.black54,
+                        size: 20,
+                      ),
+                      if (isExpanded) ...[
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Cerrar Sesión',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: isDarkMode ? Colors.white70 : Colors.black87,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
           // Botón de modo oscuro al final de la barra

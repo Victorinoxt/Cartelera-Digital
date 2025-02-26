@@ -4,6 +4,7 @@ import 'package:syncfusion_flutter_charts/charts.dart';
 import '../models/chart_data.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/export_settings.dart';
+import '../models/export_type.dart';
 import '../widgets/chart_builder.dart';
 import '../widgets/export_settings_dialog.dart';
 import '../providers/chart_providers.dart';
@@ -54,6 +55,7 @@ class SafeChartBuilder extends ConsumerWidget {
             title: title
           ),
           initialSettings: const ExportSettings(
+            type: ExportType.image,
             width: 1920,
             height: 1080,
             quality: 3.0,

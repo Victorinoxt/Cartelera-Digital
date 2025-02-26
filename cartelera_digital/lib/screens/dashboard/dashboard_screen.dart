@@ -9,6 +9,7 @@ import '../../services/media_service.dart';
 import '../../widgets/chart_widgets/chart_dialog.dart';
 import '../../widgets/export_settings_dialog.dart';
 import '../../models/export_settings.dart';
+import '../../models/export_type.dart';
 import 'widgets/logo_widget.dart';
 import 'package:flutter/services.dart';
 import 'dart:io';
@@ -23,7 +24,6 @@ import 'package:lottie/lottie.dart';
 import '../../widgets/navigation/drawer_widget.dart';
 import '../../utils/chart_builders.dart';
 import '../../widgets/chart_widget.dart';
-import '../../models/export_settings.dart';
 import '../../services/export_service.dart';
 import '../../exceptions/export_exception.dart';
 import '../monitoring/monitoring_screen.dart';
@@ -125,13 +125,22 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         builder: (context) => ExportSettingsDialog(
           title: 'Exportar Gráfico',
           chart: currentChart,
-          initialSettings: const ExportSettings(
+          initialSettings: ExportSettings(
+            type: ExportType.image,
             width: 1920,
             height: 1080,
             quality: 3.0,
             format: 'PNG',
             backgroundColor: Colors.white,
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            customTitle: null,
+            includeBorder: false,
+            borderColor: Colors.transparent,
+            borderWidth: 0,
+            exportPath: null,
+            showCustomTitle: false,
+            titleFontSize: 16,
+            titleColor: Colors.black,
           ),
         ),
       );

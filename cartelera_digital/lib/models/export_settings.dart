@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'export_type.dart';
 
 class ExportSettings {
+  final ExportType type;
   final double width;
   final double height;
   final double quality;
@@ -26,6 +28,7 @@ class ExportSettings {
   final double watermarkOpacity;
 
   const ExportSettings({
+    required this.type,
     this.width = 1920,
     this.height = 1080,
     this.quality = 3.0,
@@ -48,6 +51,7 @@ class ExportSettings {
   });
 
   ExportSettings copyWith({
+    ExportType? type,
     double? width,
     double? height,
     double? quality,
@@ -69,6 +73,7 @@ class ExportSettings {
     double? watermarkOpacity,
   }) {
     return ExportSettings(
+      type: type ?? this.type,
       width: width ?? this.width,
       height: height ?? this.height,
       quality: quality ?? this.quality,

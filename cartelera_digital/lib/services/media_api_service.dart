@@ -1,80 +1,124 @@
 import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/logging_service.dart';
-import '../config/config.dart';
+import 'package:http/http.dart' as http;
+import '../config/server_config.dart';
+import '../models/media_item.dart';
+import 'logging_service.dart';
 
-// Definimos el provider como global y aseguramos que siempre devuelva una instancia
-final mediaApiServiceProvider = Provider<MediaApiService>((ref) => MediaApiService());
+final mediaApiServiceProvider = Provider((ref) => MediaApiService());
 
 class MediaApiService {
-  // Actualizamos la URL para que coincida con tu servidor Node.js
-  static const String _baseUrl = 'http://192.168.0.5:3000/api'; // Usar la IP correcta
-
-  Future<String> uploadImage(File imageFile) async {
+  // Verificar conexión con el servidor
+  Future<bool> checkConnection() async {
     try {
-      LoggingService.info('Iniciando subida de imagen: ${imageFile.path}');
-      
-      // Crear la solicitud multipart
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$_baseUrl/upload')
-      );
+      final baseUrl = await ServerConfig.baseUrl;
+      final response = await http.get(Uri.parse('$baseUrl/api/health'));
+      LoggingService.info('Response status: ${response.statusCode}');
+      return response.statusCode == 200;
+    } catch (e) {
+      LoggingService.error('Error al verificar conexión', e.toString());
+      return false;
+    }
+  }
 
-      // Agregar el archivo a la solicitud
-      var stream = http.ByteStream(imageFile.openRead());
-      var length = await imageFile.length();
+  // Subir una imagen
+  Future<MediaItem?> uploadImage(File file) async {
+    try {
+      final baseUrl = await ServerConfig.baseUrl;
+      final uploadUrl = '$baseUrl/api/upload';
+      LoggingService.info('Subiendo imagen a: $uploadUrl');
 
-      var multipartFile = http.MultipartFile(
+      var request = http.MultipartRequest('POST', Uri.parse(uploadUrl));
+      request.files.add(await http.MultipartFile.fromPath(
         'image',
-        stream,
-        length,
-        filename: imageFile.path.split('/').last
-      );
+        file.path,
+        filename: file.path.split(Platform.pathSeparator).last,
+      ));
 
-      request.files.add(multipartFile);
-
-      // Enviar la solicitud
       var streamedResponse = await request.send();
       var response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        LoggingService.info('Imagen subida exitosamente: ${data['imageUrl']}');
-        return data['imageUrl'];
+        LoggingService.info('Imagen subida exitosamente');
+        final data = response.body;
+        // Aquí deberías parsear la respuesta y crear un MediaItem
+        return null; // Por ahora retornamos null
       } else {
         LoggingService.error(
-          'Error en la respuesta del servidor', 
-          'Código: ${response.statusCode}, Respuesta: ${response.body}'
+          'Error al subir imagen',
+          'Status: ${response.statusCode}, Body: ${response.body}',
         );
-        throw Exception('Error al subir imagen: ${response.statusCode}');
+        return null;
       }
     } catch (e) {
-      LoggingService.error('Error en la subida: $e');
-      throw Exception('Error en la subida: $e');
+      LoggingService.error('Error al subir imagen', e.toString());
+      return null;
     }
   }
 
-  // Método para verificar la conexión con la API
-  Future<bool> checkConnection() async {
+  // Subir un archivo
+  Future<MediaItem?> uploadFile(File file) async {
     try {
-      LoggingService.info('Verificando conexión con la API...');
-      final response = await http.get(Uri.parse('$_baseUrl/health'));
-      
+      final baseUrl = await ServerConfig.baseUrl;
+      final uri = Uri.parse('$baseUrl/api/upload');
+
+      var request = http.MultipartRequest('POST', uri);
+      request.files.add(await http.MultipartFile.fromPath(
+        'image',
+        file.path,
+        filename: file.path.split(Platform.pathSeparator).last,
+      ));
+
+      var response = await request.send();
+      var responseData = await response.stream.bytesToString();
+
       if (response.statusCode == 200) {
-        LoggingService.info('Conexión exitosa con la API');
-        return true;
+        LoggingService.info('Archivo subido exitosamente');
+        return null; // Por ahora retornamos null, pero podríamos parsear la respuesta
       } else {
         LoggingService.error(
-          'Error al conectar con la API', 
-          'Código: ${response.statusCode}'
+          'Error al subir archivo',
+          'Status: ${response.statusCode}, Body: $responseData',
         );
-        return false;
+        return null;
       }
     } catch (e) {
-      LoggingService.error('Error al verificar conexión', e.toString());
+      LoggingService.error('Error al subir archivo', e.toString());
+      return null;
+    }
+  }
+
+  // Eliminar una imagen
+  Future<bool> deleteImage(String id) async {
+    try {
+      final baseUrl = await ServerConfig.baseUrl;
+      final response = await http.delete(Uri.parse('$baseUrl/api/images/$id'));
+      return response.statusCode == 200;
+    } catch (e) {
+      LoggingService.error('Error al eliminar imagen', e.toString());
       return false;
+    }
+  }
+
+  // Obtener todas las imágenes
+  Future<List<MediaItem>> getImages() async {
+    try {
+      final baseUrl = await ServerConfig.baseUrl;
+      final response = await http.get(Uri.parse('$baseUrl/api/images'));
+
+      if (response.statusCode == 200) {
+        // Aquí deberías parsear la respuesta y crear una lista de MediaItem
+        return [];
+      } else {
+        LoggingService.error(
+          'Error al obtener imágenes',
+          'Status: ${response.statusCode}, Body: ${response.body}',
+        );
+        return [];
+      }
+    } catch (e) {
+      LoggingService.error('Error al obtener imágenes', e.toString());
+      return [];
     }
   }
 }

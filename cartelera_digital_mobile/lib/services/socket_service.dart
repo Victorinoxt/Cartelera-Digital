@@ -1,94 +1,246 @@
-import 'package:socket_io_client/socket_io_client.dart' as IO;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/content_model.dart';
-import 'package:http/http.dart' as http;
+import 'dart:async';
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:http/http.dart' as http;
+import '../config/server_config.dart';
+import '../models/content_model.dart';
+import '../services/logging_service.dart';
 
-final socketServiceProvider = Provider<SocketService>((ref) => SocketService());
+final socketServiceProvider = Provider<SocketService>((ref) {
+  final service = SocketService();
+  service.initialize();
+  SocketService.instance = service;
+  return service;
+});
 
 class SocketService {
-  late IO.Socket socket;
-  String? _token;
-  
-  Future<bool> login(String username, String password) async {
-    try {
-      final response = await http.post(
-        Uri.parse('http://localhost:3000/api/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'username': username,
-          'password': password,
-        }),
-      );
+  static late SocketService instance;
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        _token = data['token'];
-        initializeSocket();
-        return true;
-      }
-      return false;
-    } catch (e) {
-      print('Error en login: $e');
-      return false;
+  IO.Socket? _socket;
+  final _imagesController = StreamController<List<ContentModel>>.broadcast();
+  final _cartelerasController = StreamController<List<dynamic>>.broadcast();
+  final _messageController = StreamController<dynamic>.broadcast();
+
+  Stream<List<ContentModel>> get onImagesUpdated => _imagesController.stream;
+  Stream<List<dynamic>> get onCartelerasUpdated => _cartelerasController.stream;
+  Stream<dynamic> get onMessages => _messageController.stream;
+
+  IO.Socket get socket {
+    if (_socket == null) {
+      throw Exception('Socket no inicializado. Llama a initialize() primero.');
     }
+    return _socket!;
   }
 
-  void initializeSocket() {
-    socket = IO.io(
-      'http://localhost:3000',
+  void initialize() {
+    if (_socket != null) return; // Ya inicializado
+
+    _socket = IO.io(
+      ServerConfig.baseUrl,
       IO.OptionBuilder()
-        .setTransports(['websocket'])
-        .setExtraHeaders({'Authorization': 'Bearer $_token'})
-        .enableAutoConnect()
-        .build()
+          .setTransports(['websocket'])
+          .disableAutoConnect()
+          .build(),
     );
 
-    socket.onConnect((_) {
-      print('✅ Conectado al servidor');
+    _setupSocketListeners();
+    connect();
+  }
+
+  void _setupSocketListeners() {
+    socket.on('connect', (_) {
+      print('Conectado al servidor de sockets');
+      requestImages();
     });
 
-    socket.onConnectError((data) {
-      print('❌ Error de conexión: $data');
+    socket.on('connect_error', (data) {
+      print('Error al conectar: $data');
     });
 
-    socket.onDisconnect((_) {
-      print('❌ Desconectado del servidor');
+    socket.on('reconnect_attempt', (data) {
+      print('Intentando reconectar: $data');
+    });
+
+    socket.on('reconnect_failed', (_) {
+      print('No se pudo reconectar');
+    });
+
+    socket.on('images_updated', (data) {
+      print('Actualización de imágenes recibida: ${data.length}');
+      if (data is List) {
+        final images = data.map((item) => ContentModel.fromJson(item)).toList();
+        _imagesController.add(images);
+      }
+    });
+
+    socket.on('carteleras_updated', (data) {
+      print('Recibida actualización de carteleras');
+      if (data is List) {
+        _cartelerasController.add(data);
+      }
     });
 
     socket.on('error', (error) {
-      print('❌ Error de socket: $error');
+      print('Error en el socket: $error');
     });
+
+    socket.on('new_content', (data) {
+      print('Nuevo contenido recibido: $data');
+    });
+
+    socket.on('message', _handleWebSocketMessage);
   }
 
-  void listenToCarteleras(Function(List<ContentModel>) onCartelerasUpdated) {
-    socket.on('carteleras', (data) {
-      print('📦 Datos recibidos después de eliminar: $data');
-      try {
-        final carteleras = (data as List)
-            .map((item) => ContentModel.fromJson(item as Map<String, dynamic>))
-            .toList();
-        print('✅ Carteleras procesadas: ${carteleras.length}');
-        onCartelerasUpdated(carteleras);
-      } catch (e) {
-        print('❌ Error al procesar datos: $e');
+  void _handleWebSocketMessage(dynamic message) {
+    try {
+      final data = jsonDecode(message.toString());
+      LoggingService.info('Mensaje WebSocket recibido: $message');
+
+      switch (data['event']) {
+        case 'content_removed':
+          _handleContentRemoved(data['payload']);
+          break;
+        case 'content_updated':
+          _handleContentUpdated(data['payload']);
+          break;
+        case 'device_config':
+          _handleDeviceConfig(data['payload']);
+          break;
+        default:
+          _messageController.add(data);
+      }
+    } catch (e) {
+      LoggingService.error('Error al procesar mensaje: $e');
+    }
+  }
+
+  void _handleContentRemoved(Map<String, dynamic> payload) {
+    try {
+      LoggingService.info('Contenido eliminado recibido: $payload');
+      if (payload['remainingContent'] != null) {
+        final List<dynamic> remainingContent = payload['remainingContent'];
+        _messageController.add({
+          'event': 'content_updated',
+          'payload': remainingContent
+        });
+      }
+    } catch (e) {
+      LoggingService.error('Error al manejar eliminación de contenido: $e');
+    }
+  }
+
+  void _handleContentUpdated(dynamic payload) {
+    try {
+      LoggingService.info('Actualización de contenido recibida: $payload');
+      _messageController.add({
+        'event': 'content_updated',
+        'payload': payload
+      });
+    } catch (e) {
+      LoggingService.error('Error al manejar actualización de contenido: $e');
+    }
+  }
+
+  void _handleDeviceConfig(Map<String, dynamic> payload) {
+    try {
+      LoggingService.info('Configuración de dispositivo recibida: $payload');
+      _messageController.add({
+        'event': 'device_config',
+        'payload': payload});
+    } catch (e) {
+      LoggingService.error('Error al manejar configuración de dispositivo: $e');
+    }
+  }
+
+  Future<bool> login(String username, String password) async {
+    final completer = Completer<bool>();
+
+    socket.emitWithAck('login', {
+      'username': username,
+      'password': password,
+    }, ack: (data) {
+      if (data != null && data['success'] == true) {
+        requestImages();
+        completer.complete(true);
+      } else {
+        completer.complete(false);
+      }
+    });
+
+    return completer.future;
+  }
+
+  void requestImages() {
+    print('Solicitando imágenes al servidor...');
+    socket.emit('request_images');
+  }
+
+  void addCartelera(Map<String, dynamic> cartelera) {
+    socket.emit('add_cartelera', cartelera);
+  }
+
+  void deleteImage(String id) {
+    socket.emit('delete_image', {'id': id});
+  }
+
+  Future<void> deleteImageHttp(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ServerConfig.baseUrl}/images/$id'),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Error al eliminar la imagen');
+      }
+
+      // No necesitamos hacer nada más aquí ya que el servidor emitirá un evento 'imagesUpdated'
+    } catch (e) {
+      print('Error al eliminar imagen: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteAllImages() async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ServerConfig.baseUrl}/images'),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Error al eliminar todas las imágenes');
+      }
+
+      // No necesitamos hacer nada más aquí ya que el servidor emitirá un evento 'imagesUpdated'
+    } catch (e) {
+      print('Error al eliminar todas las imágenes: $e');
+      rethrow;
+    }
+  }
+
+  void listenToCarteleras(Function(List<dynamic>) callback) {
+    socket.on('carteleras_updated', (data) {
+      if (data is List) {
+        callback(data);
       }
     });
   }
 
-  // Método para agregar una nueva cartelera
-  void addCartelera(ContentModel nuevaCartelera) {
-    socket.emit('nueva_cartelera', nuevaCartelera.toJson());
+  void connect() {
+    if (!socket.connected) {
+      socket.connect();
+      print('Intentando conectar al servidor: ${ServerConfig.baseUrl}');
+    }
   }
 
-  // Método para eliminar una cartelera
-  void deleteCartelera(String id) {
-    print('Emitiendo evento eliminar_cartelera con ID: $id');
-    socket.emit('eliminar_cartelera', id);
+  void disconnect() {
+    socket.disconnect();
   }
 
   void dispose() {
-    socket.disconnect();
-    socket.dispose();
+    disconnect();
+    _imagesController.close();
+    _cartelerasController.close();
+    _messageController.close();
   }
-} 
+}

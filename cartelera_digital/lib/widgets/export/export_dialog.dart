@@ -1,3 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/export_settings.dart';
+import '../../models/export_type.dart';
+import '../../providers/export_providers.dart';
+
+// Definición de los providers necesarios
+final exportProgressProvider = StateProvider<double>((ref) => 0.0);
+
 class ExportDialog extends ConsumerStatefulWidget {
   final ExportType initialType;
   final String content;
@@ -16,6 +25,12 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
   late ExportSettings _settings;
   String _statusMessage = '';
   bool _isExporting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _settings = ExportSettings(type: widget.initialType);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +69,66 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     );
   }
 
+  Widget _buildHeader() {
+    return Text(
+      'Exportar Contenido',
+      style: Theme.of(context).textTheme.titleLarge,
+    );
+  }
+
+  Widget _buildTypeSelector() {
+    return DropdownButton<ExportType>(
+      value: _settings.type,
+      onChanged: (ExportType? newValue) {
+        if (newValue != null) {
+          setState(() {
+            _settings = _settings.copyWith(type: newValue);
+          });
+        }
+      },
+      items: ExportType.values.map<DropdownMenuItem<ExportType>>((ExportType value) {
+        return DropdownMenuItem<ExportType>(
+          value: value,
+          child: Text(value.toString().split('.').last.toUpperCase()),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildSettingsForm() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Configuración',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          // Aquí puedes agregar más campos de configuración según el tipo de exportación
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreview() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Vista Previa',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          // Aquí puedes implementar la vista previa según el tipo de exportación
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatusSection() {
     return Column(
       children: [
@@ -74,7 +149,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
         ],
         Text(
           _statusMessage,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.bodyMedium,
           textAlign: TextAlign.center,
         ),
       ],
@@ -87,7 +162,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
       children: [
         TextButton(
           onPressed: _isExporting ? null : () => Navigator.pop(context),
-          child: Text('Cancelar'),
+          child: const Text('Cancelar'),
         ),
         const SizedBox(width: 8),
         ElevatedButton(
@@ -105,9 +180,9 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
     });
 
     try {
-      final result = await ref.read(exportServiceProvider).exportContent(
+      final exportService = ref.read(exportServiceProvider);
+      final result = await exportService.exportContent(
         settings: _settings,
-        type: widget.initialType,
         content: widget.content,
         onProgress: (progress, message) {
           setState(() => _statusMessage = message);
@@ -124,7 +199,7 @@ class _ExportDialogState extends ConsumerState<ExportDialog> {
           _isExporting = false;
           _statusMessage = 'Error: $e';
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al exportar: $e')),
         );

@@ -1,38 +1,63 @@
-enum MediaType { image, video, chart }
+enum MediaType { image, video }
 
 class MediaItem {
   final String id;
   final String title;
-  final MediaType type;
   final String path;
-  final int duration;
+  final MediaType type;
   final Map<String, dynamic> metadata;
-  final List<String> tags;
+  final int duration;
 
   MediaItem({
     required this.id,
     required this.title,
-    required this.type,
     required this.path,
-    this.duration = 10,
+    required this.type,
     this.metadata = const {},
-    this.tags = const [],
+    this.duration = 0,
   });
 
   MediaItem copyWith({
+    String? id,
     String? title,
-    int? duration,
+    String? path,
+    MediaType? type,
     Map<String, dynamic>? metadata,
-    List<String>? tags,
+    int? duration,
   }) {
     return MediaItem(
-      id: id,
+      id: id ?? this.id,
       title: title ?? this.title,
-      type: type,
-      path: path,
-      duration: duration ?? this.duration,
+      path: path ?? this.path,
+      type: type ?? this.type,
       metadata: metadata ?? this.metadata,
-      tags: tags ?? this.tags,
+      duration: duration ?? this.duration,
     );
   }
-} 
+
+  factory MediaItem.fromJson(Map<String, dynamic> json) {
+    return MediaItem(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      path: json['path'] ?? '',
+      type: json['type']?.toString().toLowerCase() == 'video' 
+          ? MediaType.video 
+          : MediaType.image,
+      metadata: json['metadata'] ?? {},
+      duration: json['duration'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'path': path,
+      'type': type == MediaType.video ? 'video' : 'image',
+      'metadata': metadata,
+      'duration': duration,
+    };
+  }
+
+  String get status => metadata['status'] ?? 'active';
+}

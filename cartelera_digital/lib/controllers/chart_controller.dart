@@ -5,6 +5,8 @@ import '../models/chart_data.dart';
 import '../models/custom_chart.dart';
 import '../services/logging_service.dart';
 import '../services/api_service.dart';
+import '../services/external_charts_service.dart';
+import '../config/api_config.dart';
 
 class ChartException implements Exception {
   final String message;
@@ -74,14 +76,30 @@ final chartControllerProvider = StateNotifierProvider<ChartController, ChartStat
 });
 
 class ChartController extends StateNotifier<ChartState> {
+  final ApiService _apiService;
+  final ExternalChartsService _externalChartsService;
+  
+  ChartController({
+    ApiService? apiService,
+    ExternalChartsService? externalChartsService,
+  }) : _apiService = apiService ?? ApiService(),
+       _externalChartsService = externalChartsService ?? ExternalChartsService(),
+       super(ChartState(
+    salesData: [],
+    productionData: [],
+    customCharts: [],
+    isLoading: true,
+    hasError: false,
+  )) {
+    initializeData();
+  }
+
   // Cache para los datos de los gráficos
   final Map<String, List<ChartData>> _cache = {};
   
   // Tiempo de expiración del cache
   static const Duration _cacheExpiration = Duration(minutes: 5);
   DateTime _lastUpdate = DateTime.now();
-
-  final ApiService _apiService = ApiService();
 
   DateTime? _selectedDate;
 
@@ -93,16 +111,6 @@ class ChartController extends StateNotifier<ChartState> {
       LoggingService.error('Error al obtener datos del gráfico', e);
       return _getFallbackData(tipo);
     }
-  }
-
-  ChartController() : super(ChartState(
-    salesData: [],
-    productionData: [],
-    customCharts: [],
-    isLoading: true,
-    hasError: false,
-  )) {
-    initializeData();
   }
 
   // Método para actualizar un gráfico específico
@@ -135,11 +143,17 @@ class ChartController extends StateNotifier<ChartState> {
   // Método para actualizar los datos de un gráfico
   void updateChartData(String tipo, List<ChartData> newData) {
     switch (tipo) {
+      case 'solicitudes':
+        state = state.copyWith(otStatusData: newData);
+        break;
       case 'ventas':
         state = state.copyWith(salesData: newData);
         break;
       case 'produccion':
         state = state.copyWith(productionData: newData);
+        break;
+      case 'rendimiento':
+        state = state.copyWith(otRendimientoData: newData);
         break;
     }
   }
@@ -286,95 +300,60 @@ class ChartController extends StateNotifier<ChartState> {
   }
 
   Future<List<ChartData>> _fetchNewData(String tipo) async {
-    // Simulamos una llamada a API
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    switch (tipo) {
-      case 'ventas':
-        return List.generate(5, (index) {
-          return ChartData(
-            category: ['Ene', 'Feb', 'Mar', 'Abr', 'May'][index],
-            value: 20.0 + Random().nextInt(50).toDouble(),
-            date: DateTime(2024, index + 1),
-            color: Colors.blue.shade500,
-          );
-        });
-        
-      case 'produccion':
-        return [
-          ChartData(
-            category: 'Prod A',
-            value: (30 + Random().nextInt(40)).toDouble(),
-            date: DateTime.now(),
-            color: Colors.green.shade500
-          ),
-          ChartData(
-            category: 'Prod B',
-            value: (30 + Random().nextInt(40)).toDouble(),
-            date: DateTime.now(),
-            color: Colors.orange.shade500
-          ),
-          ChartData(
-            category: 'Prod C',
-            value: (30 + Random().nextInt(40)).toDouble(),
-            date: DateTime.now(),
-            color: Colors.purple.shade500
-          ),
-        ];
-        
-      default:
-        throw ChartException('Tipo de gráfico no soportado: $tipo', code: 'INVALID_TYPE');
+    try {
+      state = state.copyWith(isLoading: true, hasError: false);
+      
+      List<ChartData> newData;
+      
+      if (tipo == 'solicitudes') {
+        // Usar el servicio externo para solicitudes
+        newData = await _externalChartsService.getEstadisticasSolicitudes(
+          fecha: state.otStatusDate
+        );
+      } else {
+        // Usar el servicio local para otros tipos de gráficos
+        newData = await _getChartData(tipo);
+      }
+
+      updateChartData(tipo, newData);
+      state = state.copyWith(isLoading: false);
+      return newData;
+      
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        hasError: true,
+        errorMessage: 'Error al obtener datos: $e'
+      );
+      // Retornar datos de respaldo en caso de error
+      return _getFallbackData(tipo);
     }
   }
 
   Future<void> actualizarGraficoConFecha(String tipo, DateTime? fecha) async {
     try {
-      state = state.copyWith(isLoading: true);
+      state = state.copyWith(isLoading: true, hasError: false);
       
-      // Actualizar la fecha en el estado
-      switch (tipo) {
-        case 'ot_status':
-          state = state.copyWith(
-            otStatusDate: fecha,
-            isLoading: true,
-          );
-          break;
-        case 'ot_rendimiento':
-          state = state.copyWith(
-            otRendimientoDate: fecha,
-            isLoading: true,
-          );
-          break;
+      if (tipo == 'solicitudes') {
+        final newData = await _externalChartsService.getEstadisticasSolicitudes(
+          fecha: fecha
+        );
+        state = state.copyWith(
+          otStatusData: newData,
+          otStatusDate: fecha,
+          isLoading: false
+        );
+      } else {
+        final newData = await _getChartData(tipo, fecha: fecha);
+        updateChartData(tipo, newData);
+        state = state.copyWith(isLoading: false);
       }
-      
-      // Obtener datos con la nueva fecha
-      final nuevosDatos = await _apiService.getChartData(tipo, fecha);
-      
-      // Actualizar datos según el tipo
-      switch (tipo) {
-        case 'ot_status':
-          state = state.copyWith(
-            salesData: nuevosDatos,
-            otStatusDate: fecha,  // Aseguramos que la fecha se mantiene
-            isLoading: false,
-          );
-          break;
-        case 'ot_rendimiento':
-          state = state.copyWith(
-            productionData: nuevosDatos,
-            otRendimientoDate: fecha,  // Aseguramos que la fecha se mantiene
-            isLoading: false,
-          );
-          break;
-      }
-      
-      LoggingService.info('Gráfico actualizado: $tipo con fecha: ${fecha?.toIso8601String()}');
     } catch (e) {
-      LoggingService.error('Error al actualizar gráfico', e);
+      LoggingService.error('Error al actualizar gráfico con fecha', e);
       state = state.copyWith(
         isLoading: false,
         hasError: true,
-        errorMessage: 'Error al actualizar gráfico con fecha: $e',
+        errorMessage: 'Error al actualizar gráfico: ${e.toString()}'
       );
     }
   }

@@ -6,6 +6,9 @@ import '../services/storage_service.dart';
 import '../services/chart_export_service.dart';
 import '../services/media_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/external_charts_service.dart';
+import '../services/api_service.dart';
+import '../controllers/chart_controller.dart';
 
 // Provider para SharedPreferences
 final sharedPreferencesProvider = FutureProvider((ref) async {
@@ -68,4 +71,25 @@ class ChartNotifier extends StateNotifier<AsyncValue<List<ChartData>>> {
   }
 }
 
+// Provider para el servicio de API externa
+final externalChartsServiceProvider = Provider((ref) => ExternalChartsService());
 
+// Provider para el servicio de API local
+final apiServiceProvider = Provider((ref) => ApiService());
+
+// Provider para el controlador de gráficos
+final chartControllerProvider = StateNotifierProvider<ChartController, ChartState>((ref) {
+  final apiService = ref.watch(apiServiceProvider);
+  final externalChartsService = ref.watch(externalChartsServiceProvider);
+  
+  return ChartController(
+    apiService: apiService,
+    externalChartsService: externalChartsService,
+  );
+});
+
+// Provider para datos de solicitudes
+final solicitudesDataProvider = FutureProvider.family<List<ChartData>, DateTime?>((ref, fecha) {
+  final externalService = ref.watch(externalChartsServiceProvider);
+  return externalService.getEstadisticasSolicitudes(fecha: fecha);
+});

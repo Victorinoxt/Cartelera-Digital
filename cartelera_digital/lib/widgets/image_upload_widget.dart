@@ -1,59 +1,85 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
 import '../services/media_api_service.dart';
-import '../services/logging_service.dart';
+import '../utils/logging_service.dart';
 
-class ImageUploadWidget extends ConsumerWidget {
+class ImageUploadWidget extends ConsumerStatefulWidget {
+  final void Function()? onUploadComplete;
+
+  const ImageUploadWidget({
+    Key? key,
+    this.onUploadComplete,
+  }) : super(key: key);
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Seleccionar Imagen'),
-              onPressed: () async {
-                try {
-                  FilePickerResult? result = await FilePicker.platform.pickFiles(
-                    type: FileType.image,
-                    allowMultiple: false,
-                  );
+  ConsumerState<ImageUploadWidget> createState() => _ImageUploadWidgetState();
+}
 
-                  if (result != null) {
-                    File file = File(result.files.single.path!);
-                    final mediaApiService = ref.read(mediaApiServiceProvider);
-                    
-                    // Mostrar indicador de progreso
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Subiendo imagen...')),
-                    );
+class _ImageUploadWidgetState extends ConsumerState<ImageUploadWidget> {
+  bool _isUploading = false;
+  String? _error;
 
-                    // Subir la imagen
-                    final imageUrl = await mediaApiService.uploadImage(file);
-
-                    // Mostrar mensaje de éxito
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Imagen subida exitosamente: $imageUrl')),
-                    );
-
-                    LoggingService.info('Imagen subida: $imageUrl');
-                  }
-                } catch (e) {
-                  LoggingService.error('Error al subir imagen', e.toString());
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error al subir la imagen: $e')),
-                  );
-                }
-              },
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_isUploading)
+          const CircularProgressIndicator()
+        else
+          ElevatedButton.icon(
+            onPressed: _pickAndUploadImage,
+            icon: const Icon(Icons.upload_file),
+            label: const Text('Subir Imagen'),
+          ),
+        if (_error != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              _error!,
+              style: const TextStyle(color: Colors.red),
             ),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        setState(() {
+          _isUploading = true;
+          _error = null;
+        });
+
+        final file = File(result.files.first.path!);
+        final mediaService = ref.read(mediaApiServiceProvider);
+        final uploadedImage = await mediaService.uploadImage(file);
+
+        if (uploadedImage != null) {
+          widget.onUploadComplete?.call();
+        } else {
+          setState(() {
+            _error = 'Error al subir la imagen';
+          });
+        }
+      }
+    } catch (e) {
+      LoggingService.error('Error al subir imagen', e.toString());
+      setState(() {
+        _error = 'Error al subir la imagen: $e';
+      });
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
+    }
   }
 }

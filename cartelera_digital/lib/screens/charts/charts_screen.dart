@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import '../../models/chart_data.dart';
 import '../../models/export_settings.dart';
+import '../../models/export_type.dart';
 import '../../widgets/chart_widgets/chart_dialog.dart';
 import '../../services/media_service.dart';
 import '../../services/chart_export_service.dart';
@@ -225,6 +226,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           title: 'Exportar $title',
           chart: chart,
           initialSettings: const ExportSettings(
+            type: ExportType.image,
             width: 1920,
             height: 1080,
             quality: 3.0,
@@ -387,6 +389,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           title: 'Exportar Todos los Gráficos',
           chart: _buildPieChart(chartState.salesData),
           initialSettings: const ExportSettings(
+            type: ExportType.image,
             width: 1920,
             height: 1080,
             quality: 3.0,
@@ -576,6 +579,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           title: 'Exportar $title',
           chart: chart,
           initialSettings: const ExportSettings(
+            type: ExportType.image,
             width: 1920,
             height: 1080,
             quality: 3.0,
@@ -630,6 +634,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           chart: _buildChart(
               'pie', ref.read(chartControllerProvider).otStatusData),
           initialSettings: const ExportSettings(
+            type: ExportType.image,
             width: 1920,
             height: 1080,
             quality: 3.0,
